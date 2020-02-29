@@ -1,0 +1,31 @@
+{
+  "name": "taggerspeedtest",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "set APP_DEBUG=true & node dist",
+    "start": "set APP_DEBUG=false & node dist",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GerasimGerasimov/TaggerSpeedTest.git"
+  },
+  "author": "Gerasim Gerasimov",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GerasimGerasimov/TaggerSpeedTest/issues"
+  },
+  "homepage": "https://github.com/GerasimGerasimov/TaggerSpeedTest#readme",
+  "devDependencies": {
+    "@types/nedb": "^1.8.8",
+    "@types/node": "^12.7.1"
+  },
+  "dependencies": {
+    "@types/node-fetch": "^2.5.2",
+    "node-fetch": "^2.6.0",
+    "path": "^0.12.7"
+  }
+}
