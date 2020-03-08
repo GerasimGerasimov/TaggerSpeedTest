@@ -1,4 +1,4 @@
-const fetch = require('node-fetch');
+import fetch = require('node-fetch');
 
 export default class Controller {
     public static async  getData(host: string, request: object): Promise<any> {
