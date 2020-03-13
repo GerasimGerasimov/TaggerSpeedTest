@@ -21,10 +21,12 @@
   "homepage": "https://github.com/GerasimGerasimov/TaggerSpeedTest#readme",
   "devDependencies": {
     "@types/nedb": "^1.8.8",
-    "@types/node": "^12.7.1"
+    "@types/node": "^12.12.30"
   },
   "dependencies": {
     "@types/node-fetch": "^2.5.2",
+    "base64url": "^3.0.1",
+    "crypto": "^1.0.1",
     "node-fetch": "^2.6.0",
     "path": "^0.12.7",
     "ws": "^7.2.2"
