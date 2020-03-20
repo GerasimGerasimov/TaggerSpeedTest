@@ -3,98 +3,120 @@ import {IErrorMessage} from '../../utils/types'
 //криптография
 import {randomStringAsBase64Url} from '../../utils/utils'
 
-
-interface handler {({}): any;}
-
 class TTask {
-    MessageID: string;
-    cmd: string;
-    payload: any;
+    MessageID: string = '';
+    cmd: string = '';
+    payload: any = {};
+    Respond?: any = {};
+    TimeOut?: number = new Date().getTime()+3000;
+    callback: Function = undefined;
+}
+
+class TRespond {
+    MessageID: string = '';
+    cmd: string = '';
+    payload: any = {};
 }
 
 class TMessage {
-    ClientID: string;
-    Task: TTask;
+    ClientID: string = '';
+    MessageID: string = '';
+    cmd: string = '';
+    payload: any = {};
 }
 
 export default class Controller {
 
+    private TaskList: Map<string, TTask>;
     private ID: string;
     private wss: WSControl;
     private count: number = 0;
     
     constructor (host: string){
         this.wss = new WSControl(host, this.checkIncomingMessage.bind(this));
+        this.TaskList = new Map<string, TTask>();
+        this.controlResponds();
     }
     
-    public addGetCmdToList(payload: any){
+    public addGetCmdToList(payload: any, callback: Function){
         console.log('addGetCmdToList');
         const task:TTask = {
             MessageID: randomStringAsBase64Url(4),
             cmd:'get',
-            payload
+            payload,
+            TimeOut: new Date().getTime()+3000,
+            callback
         }
+        this.TaskList.set(task.MessageID, task);
         this.sendTask(task);
     }
 
     public async sendTask(Task:TTask) {
-        await this.wss.waitForConnect();
-        await this.wss.waitBufferRelease();
-        console.log('sendTask');
         const message: TMessage = {
             ClientID: this.ID,
-            Task
+            MessageID: Task.MessageID,
+            cmd: Task.cmd,
+            payload: Task.payload
         }
-        this.wss.send(message)
+        await this.wss.send(message)
     }
 
     public checkIncomingMessage(msg: TMessage) {
         const respond: any = this.validationJSON(msg);
-        const cmd = this.getCmdName(respond);
+        const cmd = respond.cmd;
         const commands = {
-            'id' : this.recdID.bind(this),
+            'id' : this.gotClientID.bind(this),
             'get': this.getCmd.bind(this),
-            'confirm': this.confirm.bind(this),
             'default': () => {'Unknown command'}
         };
         (commands[cmd] || commands['default'])(respond);
     }
 
-    private getCmdName(cmd: any): string {
-        for (let key in cmd) {
-            return key;
-          }
-        throw new Error ('Invalid request format');
-    }
-
     //получен ID клиента
-    private recdID(request: any){
-        this.ID = request.id;
+    private gotClientID(request: any){
+        this.ID = request.payload;
     }
 
-    //получен ID клиента
-    private getCmd(respond: any){
-        const data = respond.get;
-        console.log(`${this.count++}: ${data.time}`);
-    }
-
-    //подтверждения от сервера (о том что принял команду)
-    private confirm(request: any) {
-        console.log(request);
-    }
-
-    /*
-    public async getData(host: string, data: any):Promise<any | IErrorMessage> {
-        try {
-            const payload: string = JSON.stringify({get:data});
-            return await this.wss.send(payload)
-                .then (this.validationJSON);
-        } catch(e) {
-            console.log(e);
-            throw new Error (`Fetch Error: ${e.message}`);
+    private async getCmd(respond: TRespond){
+        const data: any = respond.payload;
+        const task:TTask = this.TaskList.get(respond.MessageID);
+        if (task) {
+            task.Respond = data;
+            console.log(`${this.count++}: ${data.time}`);
+            if (task.callback) await task.callback(task.Respond);
+            this.sendTask(task);
+            this.setUpdateTime(task);
         }
-    }   
-*/
+    }
+
+    private setUpdateTime(task: TTask) {
+        let newTime = new Date().getTime()+3000;
+        task.TimeOut = newTime;
+    }
+
+    private controlResponds(){
+        let Timer = setInterval(()=>{
+            this.TaskList.forEach((value: TTask) => {
+                const time = new Date().getTime();//текущее время
+                if (time > value.TimeOut) { // не пришёл ответ за заданное время
+                    this.warnTimeOut(value);
+                }
+            })
+        }, 1000);
+    }
+
+    //сообщает о тайм-ауте
+    private warnTimeOut(task: TTask) {
+        console.log(`${task.MessageID} respond out of date`);
+        const respond: IErrorMessage = {
+            status:'Error',
+            msg:'Time Out. Server not respond'
+        }
+        task.Respond = respond;
+        //отправить команду заново (вдруг забыл)
+        this.sendTask(task);
+    }
+
     private validationJSON (data: any): any | IErrorMessage {
         try {
             return JSON.parse(data);
@@ -102,4 +124,5 @@ export default class Controller {
             throw new Error ('Invalid JSON');
         }
     }
+
 }

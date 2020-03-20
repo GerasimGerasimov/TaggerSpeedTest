@@ -18,7 +18,7 @@ import Controller from './controller/ws/controller'
 их каждый раз запрашивать.
 */
 //const host: string = "http://localhost:5004/v1/devices/";
-const host: string = "http://localhost:5004/";
+const host: string = "ws://localhost:5004/";
 const client: Controller = new Controller(host);
 
 const task = {
@@ -29,28 +29,10 @@ const task = {
         }
 }
 
-client.addGetCmdToList(task);
+client.addGetCmdToList(task, routine);
 
-var startedTime: number = new Date().getTime();
-var tempTime: number;
-var count: number = 0;
-var errcount: number = 0;
-/*
-async function cycle () {
-    console.log(`Cycle started: ${request}`);
-    while (true) {
-        try {
-            const respond = await client.getData(host, request);
-            tempTime = new Date().getTime();
-            let	Time = tempTime - startedTime;
-            console.log(`${count++} : ${errcount} : ${((count/Time) * 1000).toFixed(2)}: ${respond.data}`);
-            await delay(5);
-        } catch (e) {
-            errcount++;
-            console.log(`Error: ${e}`);
-            await delay(1000);
-        } 
-    }
+async function routine (payload: any) {
+    await delay(10);
 }
 
 function delay(ms: number) {
@@ -58,6 +40,3 @@ function delay(ms: number) {
       setTimeout(resolve, ms);
     });
 }
-
-cycle();
-*/
